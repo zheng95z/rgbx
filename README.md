@@ -37,10 +37,10 @@ git clone https://huggingface.co/zheng95z/rgb-to-x
 ```
 
 ## Installation
-Create a conda environment using the provided `environment.yaml` file.
+Create a conda environment using the provided `environment.yml` file.
 
 ```bash
-conda env create -n rgbx -f environment.yaml
+conda env create -n rgbx -f environment.yml
 conda activate rgbx
 ```
 

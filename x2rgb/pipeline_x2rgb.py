@@ -724,6 +724,26 @@ class StableDiffusionAOVDropoutPipeline(
         # 3. Preprocess image
         # For normal, the preprocessing does nothing
         # For others, the preprocessing remap the values to [-1, 1]
+
+        # Diffusers' VAE requires H and W to be divisible by 8. PIL images are
+        # auto-resized inside image_processor, but Tensor inputs raise ValueError
+        # when dimensions are not multiples of 8 (e.g. width=1326 from a camera
+        # sensor). Crop each AOV tensor to the largest valid size to preserve all
+        # pixel values without interpolation artifacts.
+        def _crop_to_vae_size(t: torch.Tensor) -> torch.Tensor:
+            h, w = t.shape[-2], t.shape[-1]
+            return t[..., : (h // 8) * 8, : (w // 8) * 8]
+
+        _aovs = dict(albedo=albedo, normal=normal, roughness=roughness,
+                     metallic=metallic, irradiance=irradiance)
+        for _k in _aovs:
+            if _aovs[_k] is not None and isinstance(_aovs[_k], torch.Tensor):
+                _aovs[_k] = _crop_to_vae_size(_aovs[_k])
+        albedo, normal, roughness, metallic, irradiance = (
+            _aovs["albedo"], _aovs["normal"], _aovs["roughness"],
+            _aovs["metallic"], _aovs["irradiance"],
+        )
+
         preprocessed_aovs = {}
         for aov_name in required_aovs:
             if aov_name == "albedo":
